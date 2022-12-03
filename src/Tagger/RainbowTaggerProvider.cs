@@ -8,21 +8,23 @@ using Microsoft.VisualStudio.Utilities;
 namespace RainbowBraces
 {
     [Export(typeof(IViewTaggerProvider))]
-    [ContentType(ContentTypes.CPlusPlus)]
-    [ContentType(ContentTypes.CSharp)]
-    [ContentType(ContentTypes.VisualBasic)]
-    [ContentType(ContentTypes.FSharp)]
-    [ContentType(ContentTypes.Css)]
-    [ContentType(ContentTypes.Less)]
-    [ContentType(ContentTypes.Scss)]
-    [ContentType(ContentTypes.Json)]
-    [ContentType(ContentTypes.Xaml)]
-    [ContentType("TypeScript")]
-    [ContentType("SQL")]
-    [ContentType("SQL Server Tools")]
-    [ContentType("php")]
-    [ContentType("phalanger")]
-    [ContentType("Code++")]
+    [ContentType(ContentTypes.Any)]
+    //[ContentType(ContentTypes.CPlusPlus)]
+    //[ContentType(ContentTypes.CSharp)]
+    //[ContentType(ContentTypes.VisualBasic)]
+    //[ContentType(ContentTypes.FSharp)]
+    //[ContentType(ContentTypes.Css)]
+    //[ContentType(ContentTypes.Less)]
+    //[ContentType(ContentTypes.Scss)]
+    //[ContentType(ContentTypes.Json)]
+    //[ContentType(ContentTypes.Xaml)]
+    //[ContentType("TypeScript")]
+    //[ContentType("SQL")]
+    //[ContentType("SQL Server Tools")]
+    //[ContentType("php")]
+    //[ContentType("phalanger")]
+    //[ContentType("Code++")]
+    //[ContentType("Razor")]
     [TextViewRole(PredefinedTextViewRoles.PrimaryDocument)]
     [TagType(typeof(IClassificationTag))]
     public class CreationListener : IViewTaggerProvider
@@ -50,7 +52,7 @@ namespace RainbowBraces
                 return buffer.Properties.GetOrCreateSingletonProperty(() =>
                 {
                     ITagAggregator< IClassificationTag> aggregator = _aggregator.CreateTagAggregator<IClassificationTag>(textView);
-                    return new RainbowTagger(textView, buffer, _registry, aggregator);
+                    return new RainbowTagger(textView, buffer, _registry, aggregator, buffer.ContentType.TypeName.Equals("Razor", StringComparison.OrdinalIgnoreCase));
                 }) as ITagger<T>;
             }
             finally
