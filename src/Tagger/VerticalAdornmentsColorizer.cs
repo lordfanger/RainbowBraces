@@ -29,7 +29,9 @@ namespace RainbowBraces
 
         private static readonly CachedType _structureLine;
         private static CachedField<Pen> _structureLinePen;
-        private static CachedField<Pen> _structureLinePenFallback;
+        private static CachedField<Pen>[] _structureLinePenFallbacks;
+        private static CachedField<Pen>[] _allSstructureLinePen;
+        private static readonly CachedField<Pen> _structureLinePenV3;
         private static readonly CachedField<Pen> _structureLinePenV2;
         private static readonly CachedField<Pen> _structureLinePenV1;
 
@@ -52,14 +54,16 @@ namespace RainbowBraces
             _adornmentLayerElements = new("Elements", _adornmentLayerType);
             _adornmentAndDataType = new("AdornmentAndData");
             _adornmentAndDataVisualSpan = new("VisualSpan", _adornmentAndDataType);
-            _adornmentAndDataAdornment = new("Adornment", _adornmentAndDataType); 
+            _adornmentAndDataAdornment = new("Adornment", _adornmentAndDataType);
 
             // Preview version use custom line to draw vertical adornments
             _structureLine = new("StructureLine");
+            _structureLinePenV3 = new("_pen", _structureLine, false); // In VS 18 insider preview is used _pen field
             _structureLinePenV2 = new("_drawingPen", _structureLine, false); // StructureLine is only used in newer versions of Visual Studio
             _structureLinePenV1 = new("drawingPen", _structureLine, false); // StructureLine is used in older versions of Visual Studio
             _structureLinePen = _structureLinePenV2; // Use newer version of StructureLine if available
-            _structureLinePenFallback = _structureLinePenV1; // Fallback to older version of StructureLine
+            _structureLinePenFallbacks = [_structureLinePenV3, _structureLinePenV1]; // Fallback to older version of StructureLine
+            _allSstructureLinePen = [_structureLinePen, _structureLinePenV3, _structureLinePenV1];
 
             General.Saved += OnSettingsSaved;
         }
@@ -187,14 +191,21 @@ namespace RainbowBraces
                     // Try get actual pen ..
                     if (!_structureLinePen.TryGet(verticalLine, out Pen pen))
                     {
-                        // .. if not found try to get it from the second field as fallback
-                        if (!_structureLinePenFallback.TryGet(verticalLine, out pen))
+                        // .. if not found try to get it from the fallbacks
+                        foreach (CachedField<Pen> fallback in _structureLinePenFallbacks)
                         {
-                            return;
+                            if (fallback.TryGet(verticalLine, out pen))
+                            {
+                                // Store found fallback pen for next time as primary ..
+                                _structureLinePen = fallback;
+                                // .. and recreate fallbacks from others.
+                                _structureLinePenFallbacks = [.. _allSstructureLinePen.Where(p => p != fallback)];
+                                break;
+                            }
                         }
 
-                        // Store fallback pen for next time and swap fallback pen with the actual pen
-                        (_structureLinePen, _structureLinePenFallback) = (_structureLinePenFallback, _structureLinePen);
+                        // do not process if pen is not found
+                        if (pen == null) return;
                     }
 
                     // .. and replace it with new color pen ..
